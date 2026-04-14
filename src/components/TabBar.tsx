@@ -1,5 +1,6 @@
-// TabBar.tsx — Scrollable tab strip with close buttons
+// TabBar.tsx — Scrollable tab strip with close buttons + custom titlebar
 import { useRef } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore, Tab } from "../store";
 
 // Small SVG icon components for file kinds / tab types
@@ -117,9 +118,49 @@ function TabChip({ tab }: { tab: Tab }) {
   );
 }
 
+// Inline SVG window control buttons
+function WinBtn({ label, onClick, danger }: { label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      style={{
+        width: 40,
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "rgba(255,255,255,0.45)",
+        flexShrink: 0,
+        transition: "background 100ms ease, color 100ms ease",
+      }}
+      className={danger ? "hover:bg-red-600 hover:text-white!" : "hover:bg-white/10 hover:text-white!"}
+      aria-label={label}
+    >
+      {label === "Close" && (
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" width={11} height={11}>
+          <path d="M1 1l10 10M11 1L1 11" />
+        </svg>
+      )}
+      {label === "Maximize" && (
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.4} width={10} height={10}>
+          <rect x={1} y={1} width={10} height={10} rx={1.5} />
+        </svg>
+      )}
+      {label === "Minimize" && (
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" width={10} height={10}>
+          <path d="M1 6h10" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export default function TabBar() {
   const tabs = useStore((s) => s.tabs);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const win = getCurrentWindow();
 
   const onWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
@@ -128,17 +169,32 @@ export default function TabBar() {
     }
   };
 
+  // Programmatic drag: fire startDragging() unless the click landed on a
+  // tab, button, or other interactive element.
+  const onBarMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, [role="tab"], input, a, select')) return;
+    win.startDragging();
+  };
+
   return (
     <div
+      onMouseDown={onBarMouseDown}
       style={{
         backgroundColor: "var(--chrome-tabs)",
         borderBottom: "1px solid var(--border-subtle)",
         height: "40px",
         paddingTop: "4px",
         paddingLeft: "4px",
+        display: "flex",
+        alignItems: "flex-end",
+        flexShrink: 0,
+        overflow: "hidden",
+        cursor: "default",
       }}
-      className="flex items-end overflow-hidden shrink-0"
     >
+      {/* Tab strip — flex-1, scroll horizontally */}
       <div
         ref={scrollRef}
         onWheel={onWheel}
@@ -149,6 +205,38 @@ export default function TabBar() {
         {tabs.map((tab) => (
           <TabChip key={tab.id} tab={tab} />
         ))}
+      </div>
+
+      {/* App title — sits in drag region, clicking it also drags */}
+      <div
+        style={{
+          color: "rgba(255,255,255,0.25)",
+          fontSize: "11px",
+          fontWeight: 500,
+          letterSpacing: "0.04em",
+          paddingRight: 8,
+          paddingBottom: 6,
+          whiteSpace: "nowrap",
+          userSelect: "none",
+          flexShrink: 0,
+        }}
+      >
+        Know
+      </div>
+
+      {/* Window controls — must NOT have data-tauri-drag-region */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "stretch",
+          height: "100%",
+          paddingBottom: 4,
+          flexShrink: 0,
+        }}
+      >
+        <WinBtn label="Minimize" onClick={() => win.minimize()} />
+        <WinBtn label="Maximize" onClick={() => win.toggleMaximize()} />
+        <WinBtn label="Close" onClick={() => win.close()} danger />
       </div>
     </div>
   );
