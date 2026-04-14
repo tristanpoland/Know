@@ -2,7 +2,6 @@
 // Orchestrates: file discovery → parse → doc extract → graph → search index
 
 use std::path::Path;
-use tauri::State;
 use anyhow::Result;
 
 use crate::AppState;
@@ -11,7 +10,7 @@ use crate::rust_parser;
 use crate::graph_engine::builder::{ingest_rust_file, ingest_markdown_file, extract_markdown_title};
 
 /// Index an entire repository from scratch.
-pub fn index_repository(state: &State<'_, AppState>, root: &Path) -> Result<()> {
+pub fn index_repository(state: &AppState, root: &Path) -> Result<()> {
     let crate_name = root
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
@@ -94,7 +93,7 @@ pub fn index_repository(state: &State<'_, AppState>, root: &Path) -> Result<()> 
 }
 
 /// Re-index a single file after a change event.
-pub fn reindex_file(state: &State<'_, AppState>, file_path: &Path) -> Result<()> {
+pub fn reindex_file(state: &AppState, file_path: &Path) -> Result<()> {
     let ext = file_path.extension().and_then(|e| e.to_str());
 
     match ext {

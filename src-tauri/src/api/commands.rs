@@ -2,6 +2,7 @@
 // All Tauri commands are defined here and exposed to the frontend.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -16,7 +17,7 @@ use crate::symbol_index::IndexStats;
 
 use super::indexer;
 
-type AppStateGuard<'a> = State<'a, AppState>;
+type AppStateGuard<'a> = State<'a, Arc<AppState>>;
 
 // ─── Request / Response types ────────────────────────────────────────────────
 
@@ -61,8 +62,11 @@ pub struct GetDocsRequest {
 
 /// Open a Git repository at `path`, index all Rust and Markdown files,
 /// and return basic repository information.
+///
+/// Indexing is offloaded to a blocking thread pool so the Tauri async
+/// runtime (and the UI) stay responsive throughout.
 #[tauri::command]
-pub fn open_repo(
+pub async fn open_repo(
     request: OpenRepoRequest,
     state: AppStateGuard<'_>,
 ) -> Result<RepoInfo, String> {
@@ -74,11 +78,21 @@ pub fn open_repo(
         .ok_or("No repo root")?
         .to_path_buf();
 
-    // Store repo state
+    // Persist repo state immediately — the file tree is readable right away.
     state.repo.write().clone_from(&repo_state);
 
-    // Run full indexing pipeline
-    indexer::index_repository(&state, &root).map_err(|e| e.to_string())?;
+    // Clone the Arc so the closure is 'static (State<'_> is not 'static).
+    let state_arc = Arc::clone(&*state);
+    let root_clone = root.clone();
+
+    // Run the full indexing pipeline on a blocking thread.
+    // The UI can already display the repo tree while this runs.
+    tauri::async_runtime::spawn_blocking(move || {
+        indexer::index_repository(&state_arc, &root_clone)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
 
     let stats = state.symbol_index.read().stats();
 
@@ -213,12 +227,19 @@ pub fn get_graph(state: AppStateGuard<'_>) -> Result<SerializableGraph, String> 
 
 /// Force a full re-index of the current repository.
 #[tauri::command]
-pub fn reindex(state: AppStateGuard<'_>) -> Result<IndexStats, String> {
+pub async fn reindex(state: AppStateGuard<'_>) -> Result<IndexStats, String> {
     let root = state.repo.read().root().map(|p| p.to_path_buf());
 
     match root {
         Some(r) => {
-            indexer::index_repository(&state, &r).map_err(|e| e.to_string())?;
+            let state_arc = Arc::clone(&*state);
+            tauri::async_runtime::spawn_blocking(move || {
+                indexer::index_repository(&state_arc, &r)
+            })
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+
             let stats = state.symbol_index.read().stats();
             Ok(stats)
         }

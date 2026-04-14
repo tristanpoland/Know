@@ -235,7 +235,7 @@ export const useStore = create<KnowStore>((set, get) => {
 
   // Schedule auto-reopen of last workspace after store is initialised
   if (_recentWorkspaces.length > 0) {
-    setTimeout(() => get().openRepo(_recentWorkspaces[0]), 0);
+    setTimeout(() => get().openRepo(_recentWorkspaces[0]), 50);
   }
 
   return {
@@ -375,7 +375,8 @@ export const useStore = create<KnowStore>((set, get) => {
         set({ repoInfo: info });
         get().addRecentWorkspace(path);
         await get().loadFileTree();
-        await get().loadSymbols();
+        // Symbols update in the background — UI is already usable
+        get().loadSymbols().catch(() => {});
       } catch (e) {
         set({ error: String(e) });
       } finally {

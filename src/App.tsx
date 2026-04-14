@@ -53,8 +53,6 @@ export default function App() {
       style={{ backgroundColor: "var(--bg-base)", color: "var(--text-normal)" }}
       className="flex flex-col h-full overflow-hidden"
     >
-      <ErrorBanner />
-
       {/* Content row */}
       <div className="flex flex-1 overflow-hidden">
         {/* Activity bar */}
@@ -74,6 +72,9 @@ export default function App() {
 
       {/* Status bar */}
       <StatusBar />
+
+      {/* Toast notifications — fixed overlay, position independent */}
+      <ErrorBanner />
     </div>
   );
 }

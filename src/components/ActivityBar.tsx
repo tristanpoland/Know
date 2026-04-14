@@ -1,4 +1,5 @@
 // ActivityBar.tsx — Left-side icon strip (Obsidian-style)
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore, SidebarView } from "../store";
 
 // Which items open a dedicated tab instead of a sidebar panel
@@ -52,17 +53,26 @@ export default function ActivityBar() {
   const setSidebarView   = useStore((s) => s.setSidebarView);
   const openSpecialTab   = useStore((s) => s.openSpecialTab);
 
+  const win = getCurrentWindow();
+
   const handleClick = (id: SidebarView) => {
     if (TAB_ITEMS.has(id)) {
-      // These views work best as full-width tabs, not a narrow sidebar panel
       openSpecialTab(id as "rustdoc" | "graph" | "settings");
     } else {
       setSidebarView(id);
     }
   };
 
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+    win.startDragging();
+  };
+
   return (
     <aside
+      onMouseDown={onMouseDown}
       style={{
         backgroundColor: "var(--chrome-activity)",
         borderRight: "1px solid var(--border-subtle)",

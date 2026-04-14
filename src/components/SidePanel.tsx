@@ -1,5 +1,6 @@
 // SidePanel.tsx — Collapsible sidebar container that routes to the active view
 import { useRef, useCallback } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore } from "../store";
 import FileExplorer from "./FileExplorer";
 import SearchView from "./SearchView";
@@ -32,6 +33,15 @@ export default function SidePanel() {
     window.addEventListener("mouseup", onUp);
   }, [setSidebarWidth]);
 
+  const win = getCurrentWindow();
+
+  const onHeaderMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, [role="tab"], input, a, select')) return;
+    win.startDragging();
+  }, [win]);
+
   if (!sidebarOpen) return null;
 
   const PANEL_TITLES: Record<string, string> = {
@@ -51,20 +61,25 @@ export default function SidePanel() {
       }}
       className="flex flex-col shrink-0 overflow-hidden relative"
     >
-      {/* Header */}
+      {/* Header — matches TabBar height, color, and drag behavior */}
       <div
+        onMouseDown={onHeaderMouseDown}
         style={{
+          height: "40px",
+          backgroundColor: "var(--chrome-tabs)",
+          borderBottom: "1px solid var(--border-subtle)",
           color: "var(--text-faint)",
           fontSize: "10px",
           letterSpacing: "0.10em",
-          borderBottom: "1px solid var(--border-subtle)",
-          backgroundColor: "var(--glass-subtle)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          padding: "8px 12px 7px",
           fontWeight: 600,
+          paddingLeft: "12px",
+          paddingRight: "12px",
+          cursor: "default",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
         }}
-        className="select-none shrink-0 uppercase"
+        className="select-none uppercase"
       >
         {PANEL_TITLES[sidebarView] ?? sidebarView.toUpperCase()}
       </div>

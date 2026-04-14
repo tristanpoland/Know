@@ -11,6 +11,7 @@ pub mod search;
 pub mod api;
 
 use parking_lot::RwLock;
+use std::sync::Arc;
 use tauri::Manager;
 
 use symbol_index::SymbolIndex;
@@ -52,7 +53,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
-        .manage(state)
+        .manage(Arc::new(state))
         .invoke_handler(tauri::generate_handler![
             api::commands::open_repo,
             api::commands::get_repo_tree,
