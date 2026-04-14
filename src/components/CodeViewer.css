@@ -42,15 +42,5 @@
   flex: 1;
   overflow: hidden;
   min-height: 0;
-}
-
-.code-editor-wrap .cm-editor {
-  height: 100%;
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-
-.code-editor-wrap .cm-scroller {
-  overflow: auto;
-  height: 100%;
+  /* Monaco mounts its own DOM here; let it fill the flex child */
 }

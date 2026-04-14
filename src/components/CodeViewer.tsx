@@ -1,11 +1,7 @@
-// components/CodeViewer.tsx — Syntax-highlighted code/markdown viewer using CodeMirror
+// components/CodeViewer.tsx — Read-only Monaco editor with dynamic theming
 import { useEffect, useRef } from "react";
-import { EditorView, basicSetup } from "codemirror";
-import { EditorState, Compartment } from "@codemirror/state";
-import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
-import { tags } from "@lezer/highlight";
-import { rust } from "@codemirror/lang-rust";
-import { markdown } from "@codemirror/lang-markdown";
+import MonacoEditor, { OnMount } from "@monaco-editor/react";
+import type * as MonacoNS from "monaco-editor";
 import { FileCode2, FileText, Settings2, File } from "lucide-react";
 import { FileContent, useStore } from "../store";
 import "./CodeViewer.css";
@@ -15,104 +11,129 @@ interface Props {
   isLoading?: boolean;
 }
 
+const THEME_NAME = "know-dynamic";
+
 function getCssVar(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function buildCmTheme() {
-  const isDark = document.documentElement.getAttribute("data-theme-mode") === "dark";
+/** Convert any CSS colour (hex or rgba) to a 6- or 8-digit hex Monaco accepts. */
+function toHex(cssVar: string): string {
+  const val = getCssVar(cssVar);
+  if (val.startsWith("#")) return val;
+  const m = val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (m) {
+    const r = parseInt(m[1]).toString(16).padStart(2, "0");
+    const g = parseInt(m[2]).toString(16).padStart(2, "0");
+    const b = parseInt(m[3]).toString(16).padStart(2, "0");
+    const a = m[4] !== undefined
+      ? Math.round(parseFloat(m[4]) * 255).toString(16).padStart(2, "0")
+      : "ff";
+    return `#${r}${g}${b}${a}`;
+  }
+  return "#808080";
+}
 
-  const editorTheme = EditorView.theme({
-    "&": { color: getCssVar("--code-text"), backgroundColor: getCssVar("--code-bg"), height: "100%" },
-    ".cm-content": { caretColor: getCssVar("--accent") },
-    ".cm-cursor, .cm-dropCursor": { borderLeftColor: getCssVar("--accent") },
-    "&.cm-focused .cm-cursor": { borderLeftColor: getCssVar("--accent") },
-    "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
-      backgroundColor: getCssVar("--bg-selected"),
+function buildMonacoTheme(): MonacoNS.editor.IStandaloneThemeData {
+  const isDark = document.documentElement.getAttribute("data-theme-mode") !== "light";
+  return {
+    base: isDark ? "vs-dark" : "vs",
+    inherit: false,
+    rules: [
+      { token: "",                        foreground: toHex("--code-text").slice(1),      background: toHex("--code-bg").slice(1) },
+      { token: "keyword",                 foreground: toHex("--code-keyword").slice(1),   fontStyle: "bold" },
+      { token: "keyword.control",         foreground: toHex("--code-keyword").slice(1),   fontStyle: "bold" },
+      { token: "keyword.operator",        foreground: toHex("--code-operator").slice(1) },
+      { token: "string",                  foreground: toHex("--code-string").slice(1) },
+      { token: "string.escape",           foreground: toHex("--code-string").slice(1) },
+      { token: "comment",                 foreground: toHex("--code-comment").slice(1),   fontStyle: "italic" },
+      { token: "comment.line",            foreground: toHex("--code-comment").slice(1),   fontStyle: "italic" },
+      { token: "comment.block",           foreground: toHex("--code-comment").slice(1),   fontStyle: "italic" },
+      { token: "comment.doc",             foreground: toHex("--code-comment").slice(1),   fontStyle: "italic" },
+      { token: "number",                  foreground: toHex("--code-number").slice(1) },
+      { token: "type",                    foreground: toHex("--code-type").slice(1) },
+      { token: "type.identifier",         foreground: toHex("--code-type").slice(1) },
+      { token: "entity.name.type",        foreground: toHex("--code-type").slice(1) },
+      { token: "identifier",              foreground: toHex("--code-text").slice(1) },
+      { token: "variable",                foreground: toHex("--code-text").slice(1) },
+      { token: "variable.predefined",     foreground: toHex("--code-keyword").slice(1) },
+      { token: "delimiter",               foreground: toHex("--code-punct").slice(1) },
+      { token: "delimiter.bracket",       foreground: toHex("--code-punct").slice(1) },
+      { token: "delimiter.parenthesis",   foreground: toHex("--code-punct").slice(1) },
+      { token: "operator",                foreground: toHex("--code-operator").slice(1) },
+      { token: "attribute.name",          foreground: toHex("--code-attribute").slice(1) },
+      { token: "attribute.value",         foreground: toHex("--code-string").slice(1) },
+      { token: "tag",                     foreground: toHex("--code-keyword").slice(1) },
+      { token: "constant",                foreground: toHex("--code-number").slice(1) },
+      { token: "support.function",        foreground: toHex("--code-function").slice(1) },
+      { token: "entity.name.function",    foreground: toHex("--code-function").slice(1) },
+      { token: "regexp",                  foreground: toHex("--code-string").slice(1) },
+      { token: "metatag",                 foreground: toHex("--code-comment").slice(1) },
+      // Markdown
+      { token: "keyword.md",              foreground: toHex("--code-keyword").slice(1),   fontStyle: "bold" },
+      { token: "strong.md",               foreground: toHex("--code-text").slice(1),      fontStyle: "bold" },
+      { token: "emphasis.md",             foreground: toHex("--code-text").slice(1),      fontStyle: "italic" },
+      { token: "string.link.md",          foreground: toHex("--text-link").slice(1) },
+      { token: "string.link.title.md",    foreground: toHex("--text-link").slice(1) },
+      { token: "code.md",                 foreground: toHex("--code-string").slice(1) },
+    ],
+    colors: {
+      "editor.background":                    toHex("--code-bg"),
+      "editor.foreground":                    toHex("--code-text"),
+      "editor.lineHighlightBackground":       toHex("--bg-hover"),
+      "editor.lineHighlightBorder":           "#00000000",
+      "editor.selectionBackground":           toHex("--bg-selected"),
+      "editor.inactiveSelectionBackground":   toHex("--bg-hover"),
+      "editorLineNumber.foreground":          toHex("--text-faint"),
+      "editorLineNumber.activeForeground":    toHex("--text-muted"),
+      "editorGutter.background":              toHex("--code-bg"),
+      "editorCursor.foreground":              toHex("--accent"),
+      "editorIndentGuide.background1":        toHex("--border-subtle"),
+      "editorIndentGuide.activeBackground1":  toHex("--border-default"),
+      "editorBracketMatch.background":        toHex("--accent-muted"),
+      "editorBracketMatch.border":            toHex("--accent"),
+      "editorWidget.background":              toHex("--bg-elevated"),
+      "editorWidget.border":                  toHex("--border-default"),
+      "editorHoverWidget.background":         toHex("--bg-elevated"),
+      "editorHoverWidget.border":             toHex("--border-default"),
+      "editorSuggestWidget.background":       toHex("--bg-elevated"),
+      "editorSuggestWidget.border":           toHex("--border-default"),
+      "editorSuggestWidget.selectedBackground": toHex("--bg-selected"),
+      "minimap.background":                   toHex("--code-bg"),
+      "scrollbar.shadow":                     "#00000000",
+      "scrollbarSlider.background":           toHex("--text-faint") + "44",
+      "scrollbarSlider.hoverBackground":      toHex("--text-faint") + "88",
+      "scrollbarSlider.activeBackground":     toHex("--text-muted"),
     },
-    ".cm-activeLine": { backgroundColor: getCssVar("--bg-hover") },
-    ".cm-gutters": {
-      backgroundColor: getCssVar("--code-bg"),
-      color: getCssVar("--text-faint"),
-      border: "none",
-      borderRight: `1px solid ${getCssVar("--border-subtle")}`,
-    },
-    ".cm-activeLineGutter": { backgroundColor: getCssVar("--bg-hover") },
-    ".cm-lineNumbers .cm-gutterElement": { padding: "0 12px 0 8px", minWidth: "32px" },
-    ".cm-foldPlaceholder": { backgroundColor: getCssVar("--bg-elevated"), color: getCssVar("--text-muted"), border: "none" },
-    ".cm-tooltip": { backgroundColor: getCssVar("--bg-elevated"), border: `1px solid ${getCssVar("--border-default")}`, color: getCssVar("--text-normal") },
-    ".cm-matchingBracket": { outline: `1px solid ${getCssVar("--accent")}`, color: "inherit !important" },
-    ".cm-searchMatch": { backgroundColor: getCssVar("--accent-muted"), outline: `1px solid ${getCssVar("--accent")}` },
-  }, { dark: isDark });
+  };
+}
 
-  const highlightStyle = syntaxHighlighting(HighlightStyle.define([
-    { tag: tags.keyword,                               color: getCssVar("--code-keyword"), fontWeight: "bold" },
-    { tag: [tags.string, tags.special(tags.string)],  color: getCssVar("--code-string") },
-    { tag: tags.comment,                               color: getCssVar("--code-comment"), fontStyle: "italic" },
-    { tag: [tags.number, tags.bool, tags.null],        color: getCssVar("--code-number") },
-    { tag: [tags.typeName, tags.className],            color: getCssVar("--code-type") },
-    { tag: [tags.function(tags.variableName), tags.definition(tags.variableName)], color: getCssVar("--code-function") },
-    { tag: [tags.punctuation, tags.bracket],           color: getCssVar("--code-punct") },
-    { tag: [tags.operator, tags.operatorKeyword],      color: getCssVar("--code-operator") },
-    { tag: [tags.attributeName, tags.attributeValue],  color: getCssVar("--code-attribute") },
-    { tag: tags.propertyName,                          color: getCssVar("--code-attribute") },
-    { tag: tags.variableName,                          color: getCssVar("--code-text") },
-    { tag: tags.self,                                  color: getCssVar("--code-keyword") },
-    { tag: tags.heading,                               color: getCssVar("--code-keyword"), fontWeight: "bold" },
-    { tag: tags.emphasis,                              fontStyle: "italic" },
-    { tag: tags.strong,                                fontWeight: "bold" },
-    { tag: tags.link,                                  color: getCssVar("--text-link"), textDecoration: "underline" },
-    { tag: tags.meta,                                  color: getCssVar("--code-comment") },
-    { tag: tags.invalid,                               color: getCssVar("--color-red") },
-  ]));
-
-  return [editorTheme, highlightStyle];
+function kindToLanguage(kind: string): string {
+  switch (kind) {
+    case "rust":     return "rust";
+    case "markdown": return "markdown";
+    case "toml":     return "ini";
+    default:         return "plaintext";
+  }
 }
 
 export default function CodeViewer({ file, isLoading }: Props) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const viewRef   = useRef<EditorView | null>(null);
-  const cmTheme   = useRef(new Compartment());
-
+  const monacoRef = useRef<typeof MonacoNS | null>(null);
   const theme = useStore((s) => s.theme);
 
-  // Create / recreate editor when the file changes
+  // Re-define and re-apply Monaco theme whenever the Zustand theme changes
   useEffect(() => {
-    if (!editorRef.current || !file) return;
-
-    const extensions = [
-      basicSetup,
-      cmTheme.current.of(buildCmTheme()),
-      EditorView.editable.of(false),
-      EditorView.lineWrapping,
-    ];
-
-    if (file.kind === "rust")     extensions.push(rust());
-    else if (file.kind === "markdown") extensions.push(markdown());
-
-    const state = EditorState.create({ doc: file.content, extensions });
-    const view  = new EditorView({ state, parent: editorRef.current });
-    viewRef.current = view;
-
-    return () => { view.destroy(); viewRef.current = null; };
-  }, [file?.path, file?.kind]);
-
-  // Update content without recreating the editor
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view || !file) return;
-    const current = view.state.doc.toString();
-    if (current !== file.content) {
-      view.dispatch({ changes: { from: 0, to: current.length, insert: file.content } });
-    }
-  }, [file?.content]);
-
-  // Hot-swap the CodeMirror theme whenever the Zustand theme changes
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-    view.dispatch({ effects: cmTheme.current.reconfigure(buildCmTheme()) });
+    const m = monacoRef.current;
+    if (!m) return;
+    m.editor.defineTheme(THEME_NAME, buildMonacoTheme());
+    m.editor.setTheme(THEME_NAME);
   }, [theme]);
+
+  const handleMount: OnMount = (_editor, monaco) => {
+    monacoRef.current = monaco;
+    monaco.editor.defineTheme(THEME_NAME, buildMonacoTheme());
+    monaco.editor.setTheme(THEME_NAME);
+  };
 
   if (isLoading) {
     return (
@@ -139,7 +160,39 @@ export default function CodeViewer({ file, isLoading }: Props) {
         <span className="code-file-name">{fileName}</span>
         <span className="code-file-path">{file.path}</span>
       </div>
-      <div className="code-editor-wrap" ref={editorRef} />
+      <div className="code-editor-wrap">
+        <MonacoEditor
+          key={file.path}
+          value={file.content}
+          language={kindToLanguage(file.kind)}
+          theme={THEME_NAME}
+          onMount={handleMount}
+          height="100%"
+          options={{
+            readOnly: true,
+            domReadOnly: true,
+            fontSize: 13,
+            fontFamily: getCssVar("--font-mono") || "'Fira Code', 'Cascadia Code', monospace",
+            fontLigatures: true,
+            lineNumbers: "on",
+            minimap: { enabled: true, scale: 1 },
+            scrollBeyondLastLine: false,
+            wordWrap: "off",
+            renderWhitespace: "none",
+            guides: { indentation: true, bracketPairs: false },
+            folding: true,
+            contextmenu: false,
+            smoothScrolling: true,
+            cursorBlinking: "smooth",
+            renderLineHighlight: "line",
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            overviewRulerBorder: false,
+            padding: { top: 8, bottom: 8 },
+            scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+          }}
+        />
+      </div>
     </div>
   );
 }
