@@ -6,8 +6,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use notify_debouncer_mini::{new_debouncer, DebouncedEvent};
+use notify::RecursiveMode;
+use notify_debouncer_mini::{new_debouncer, DebouncedEvent, DebouncedEventKind};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
@@ -72,9 +72,7 @@ pub fn start_watcher(
                     }
                 }
                 Err(errors) => {
-                    for err in errors {
-                        log::warn!("File watcher error: {:?}", err);
-                    }
+                    log::warn!("File watcher error: {:?}", errors);
                 }
             }
         }
@@ -84,15 +82,13 @@ pub fn start_watcher(
 }
 
 fn convert_event(event: &DebouncedEvent) -> Option<FileChangeEvent> {
-    // notify_debouncer_mini gives us DebouncedEvent with a path and kind
+    // notify_debouncer_mini collapses events into Any/AnyContinuous;
+    // treat all as Modified — the indexer will re-parse the file regardless.
     let path = event.path.clone();
     let kind = match event.kind {
-        notify::EventKind::Create(_) => FileChangeKind::Created,
-        notify::EventKind::Modify(_) => FileChangeKind::Modified,
-        notify::EventKind::Remove(_) => FileChangeKind::Deleted,
-        _ => return None,
+        DebouncedEventKind::Any | DebouncedEventKind::AnyContinuous => FileChangeKind::Modified,
+        _ => FileChangeKind::Modified,
     };
-
     Some(FileChangeEvent { path, kind })
 }
 

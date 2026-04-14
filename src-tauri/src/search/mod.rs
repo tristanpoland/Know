@@ -8,7 +8,7 @@ use tantivy::{
     collector::TopDocs,
     doc,
     query::QueryParser,
-    schema::{Schema, SchemaBuilder, FAST, STORED, TEXT},
+    schema::{Schema, SchemaBuilder, Value, FAST, STORED, TEXT},
     Index, IndexWriter, TantivyDocument,
 };
 
@@ -98,24 +98,24 @@ impl SearchEngine {
 
     /// Index a Rust symbol and its documentation.
     pub fn index_symbol(&mut self, item: &RustItem) -> Result<()> {
+        let (f_kind, f_title, f_path, f_body, f_line) = (
+            self.schema.kind, self.schema.title, self.schema.path,
+            self.schema.body, self.schema.line,
+        );
         let writer = self.writer()?;
 
-        // Delete existing document with this path
-        let path_term = tantivy::Term::from_field_text(
-            self.schema.path,
-            &item.qualified_path,
-        );
+        let path_term = tantivy::Term::from_field_text(f_path, &item.qualified_path);
         writer.delete_term(path_term);
 
         let body = item.docs.as_deref().unwrap_or_default();
         let kind = format!("{:?}", item.kind).to_lowercase();
 
         writer.add_document(doc!(
-            self.schema.kind => kind.as_str(),
-            self.schema.title => item.name.as_str(),
-            self.schema.path => item.qualified_path.as_str(),
-            self.schema.body => body,
-            self.schema.line => item.span.start_line as u64,
+            f_kind  => kind.as_str(),
+            f_title => item.name.as_str(),
+            f_path  => item.qualified_path.as_str(),
+            f_body  => body,
+            f_line  => item.span.start_line as u64,
         ))?;
 
         Ok(())
@@ -123,18 +123,22 @@ impl SearchEngine {
 
     /// Index a Markdown file's content.
     pub fn index_markdown(&mut self, file_path: &PathBuf, title: &str, content: &str) -> Result<()> {
+        let (f_kind, f_title, f_path, f_body, f_line) = (
+            self.schema.kind, self.schema.title, self.schema.path,
+            self.schema.body, self.schema.line,
+        );
+        let path_str = file_path.to_string_lossy().into_owned();
         let writer = self.writer()?;
-        let path_str = file_path.to_string_lossy();
 
-        let path_term = tantivy::Term::from_field_text(self.schema.path, &path_str);
+        let path_term = tantivy::Term::from_field_text(f_path, &path_str);
         writer.delete_term(path_term);
 
         writer.add_document(doc!(
-            self.schema.kind => "markdown",
-            self.schema.title => title,
-            self.schema.path => path_str.as_ref(),
-            self.schema.body => content,
-            self.schema.line => 0u64,
+            f_kind  => "markdown",
+            f_title => title,
+            f_path  => path_str.as_str(),
+            f_body  => content,
+            f_line  => 0u64,
         ))?;
 
         Ok(())
@@ -211,9 +215,10 @@ impl SearchEngine {
 
     /// Remove all indexed content for a specific file path.
     pub fn remove_file(&mut self, path: &PathBuf) -> Result<()> {
+        let f_path = self.schema.path;
+        let path_str = path.to_string_lossy().into_owned();
         let writer = self.writer()?;
-        let path_str = path.to_string_lossy();
-        let path_term = tantivy::Term::from_field_text(self.schema.path, &path_str);
+        let path_term = tantivy::Term::from_field_text(f_path, &path_str);
         writer.delete_term(path_term);
         Ok(())
     }
