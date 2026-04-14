@@ -1,0 +1,35 @@
+/* ErrorBanner.css */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #c92a2a;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 12px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.error-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.error-message {
+  flex: 1;
+}
+
+.error-dismiss {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.error-dismiss:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}

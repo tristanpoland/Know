@@ -1,0 +1,62 @@
+/* StatusBar.css */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 24px;
+  background: #0d7a5f;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+.status-item {
+  padding: 0 8px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-item.mono {
+  font-family: var(--font-mono);
+}
+
+.status-item.dim {
+  opacity: 0.7;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background: #69db7c;
+}
+
+.status-separator {
+  flex: 1;
+}
+
+.status-btn {
+  padding: 0 10px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transition: background var(--transition);
+  margin-right: 4px;
+}
+
+.status-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.status-btn:disabled {
+  opacity: 0.6;
+}

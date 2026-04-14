@@ -1,0 +1,21 @@
+/* MainPanel.css */
+.main-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+.empty-editor {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-editor-inner {
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
