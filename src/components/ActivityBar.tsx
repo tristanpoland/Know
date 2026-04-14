@@ -1,6 +1,9 @@
 // ActivityBar.tsx — Left-side icon strip (Obsidian-style)
 import { useStore, SidebarView } from "../store";
 
+// Which items open a dedicated tab instead of a sidebar panel
+const TAB_ITEMS = new Set<SidebarView>(["rustdoc", "graph", "settings"]);
+
 // Heroicons-style SVG paths (24×24 viewBox, stroke-based)
 const ICONS: Record<SidebarView, JSX.Element> = {
   files: (
@@ -44,9 +47,19 @@ const ITEMS: { id: SidebarView; label: string }[] = [
 ];
 
 export default function ActivityBar() {
-  const sidebarView    = useStore((s) => s.sidebarView);
-  const sidebarOpen    = useStore((s) => s.sidebarOpen);
-  const setSidebarView = useStore((s) => s.setSidebarView);
+  const sidebarView      = useStore((s) => s.sidebarView);
+  const sidebarOpen      = useStore((s) => s.sidebarOpen);
+  const setSidebarView   = useStore((s) => s.setSidebarView);
+  const openSpecialTab   = useStore((s) => s.openSpecialTab);
+
+  const handleClick = (id: SidebarView) => {
+    if (TAB_ITEMS.has(id)) {
+      // These views work best as full-width tabs, not a narrow sidebar panel
+      openSpecialTab(id as "rustdoc" | "graph" | "settings");
+    } else {
+      setSidebarView(id);
+    }
+  };
 
   return (
     <aside
@@ -58,11 +71,11 @@ export default function ActivityBar() {
       className="flex flex-col items-center shrink-0 py-2 select-none z-10"
     >
       {ITEMS.map((item) => {
-        const active = sidebarView === item.id && sidebarOpen;
+        const active = !TAB_ITEMS.has(item.id) && sidebarView === item.id && sidebarOpen;
         return (
           <button
             key={item.id}
-            onClick={() => setSidebarView(item.id)}
+            onClick={() => handleClick(item.id)}
             title={item.label}
             style={{
               color: active ? "var(--accent)" : "var(--text-faint)",
