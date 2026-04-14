@@ -6,7 +6,6 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Theme } from "./theme/types";
 import {
   BUILT_IN_THEMES,
-  OBSIDIAN_DARK,
   applyTheme,
   loadStoredThemeId,
   saveThemeId,
@@ -153,7 +152,7 @@ export type SidebarView = "files" | "search" | "rustdoc" | "graph" | "settings";
 const _customThemes = loadCustomThemes();
 const _allThemes = [...BUILT_IN_THEMES, ..._customThemes];
 const _storedId = loadStoredThemeId();
-const _initialTheme = _allThemes.find((t) => t.id === _storedId) ?? OBSIDIAN_DARK;
+const _initialTheme = _allThemes.find((t) => t.id === _storedId) ?? _allThemes[0];
 
 const SPECIAL_TAB_IDS: Record<string, string> = {
   welcome: "tab-welcome",
@@ -266,7 +265,7 @@ export const useStore = create<KnowStore>((set, get) => {
       saveCustomThemes(customs);
       set({ allThemes: next });
       if (get().theme.id === id) {
-        get().setTheme(OBSIDIAN_DARK.id);
+        get().setTheme(BUILT_IN_THEMES[0]?.id ?? "obsidian-dark");
       }
     },
 
