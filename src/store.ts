@@ -14,6 +14,28 @@ import {
   saveCustomThemes,
 } from "./theme/defaults";
 
+// ─── Workspace cache helpers ─────────────────────────────────────────────────
+
+const WORKSPACE_CACHE_KEY = "know-recent-workspaces";
+const WORKSPACE_CACHE_MAX = 10;
+
+function loadRecentWorkspaces(): string[] {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_CACHE_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveRecentWorkspaces(paths: string[]): void {
+  localStorage.setItem(WORKSPACE_CACHE_KEY, JSON.stringify(paths));
+}
+
+function pushWorkspace(existing: string[], path: string): string[] {
+  const deduped = existing.filter((p) => p !== path);
+  return [path, ...deduped].slice(0, WORKSPACE_CACHE_MAX);
+}
+
 // ─── Tab types ───────────────────────────────────────────────────────────────
 
 export type TabType = "welcome" | "file" | "rustdoc" | "search" | "graph" | "settings";
@@ -176,6 +198,11 @@ interface KnowStore {
   isLoading: boolean;
   error: string | null;
 
+  // ── Workspace history ─────────────────────────────────────────────────────
+  recentWorkspaces: string[];
+  addRecentWorkspace: (path: string) => void;
+  clearRecentWorkspaces: () => void;
+
   // ── File content cache ────────────────────────────────────────────────────
   openFileContents: Record<string, FileContent>;
 
@@ -203,6 +230,14 @@ interface KnowStore {
 export const useStore = create<KnowStore>((set, get) => {
   // Apply initial theme immediately
   applyTheme(_initialTheme);
+
+  // Load workspace cache
+  const _recentWorkspaces = loadRecentWorkspaces();
+
+  // Schedule auto-reopen of last workspace after store is initialised
+  if (_recentWorkspaces.length > 0) {
+    setTimeout(() => get().openRepo(_recentWorkspaces[0]), 0);
+  }
 
   return {
     // ── Theme ───────────────────────────────────────────────────────────────
@@ -320,11 +355,26 @@ export const useStore = create<KnowStore>((set, get) => {
     error: null,
     openFileContents: {},
 
+    // ── Workspace history ────────────────────────────────────────────────────
+    recentWorkspaces: _recentWorkspaces,
+
+    addRecentWorkspace: (path: string) => {
+      const next = pushWorkspace(get().recentWorkspaces, path);
+      saveRecentWorkspaces(next);
+      set({ recentWorkspaces: next });
+    },
+
+    clearRecentWorkspaces: () => {
+      saveRecentWorkspaces([]);
+      set({ recentWorkspaces: [] });
+    },
+
     openRepo: async (path: string) => {
       set({ isLoading: true, error: null });
       try {
         const info = await invoke<RepoInfo>("open_repo", { request: { path } });
         set({ repoInfo: info });
+        get().addRecentWorkspace(path);
         await get().loadFileTree();
         await get().loadSymbols();
       } catch (e) {

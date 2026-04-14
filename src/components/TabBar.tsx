@@ -29,7 +29,7 @@ function TabChip({ tab }: { tab: Tab }) {
         color: active ? "var(--text-normal)" : "var(--text-muted)",
         borderRight: "1px solid var(--border-subtle)",
       }}
-      className="flex items-center gap-1.5 px-3 h-full shrink-0 max-w-[180px] cursor-pointer select-none group hover:bg-[color:var(--bg-hover)] transition-colors"
+      className="flex items-center gap-1.5 px-3 h-full shrink-0 max-w-45 cursor-pointer select-none group hover:bg-(--bg-hover) transition-colors"
     >
       <span className="text-xs shrink-0">{icon}</span>
       <span className="truncate text-xs flex-1">{tab.title}</span>
@@ -37,7 +37,7 @@ function TabChip({ tab }: { tab: Tab }) {
         <button
           onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
           style={{ color: "var(--text-faint)" }}
-          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:text-[color:var(--text-normal)] w-4 h-4 flex items-center justify-center rounded"
+          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:text-(--text-normal) w-4 h-4 flex items-center justify-center rounded"
           aria-label="Close tab"
         >
           ×

@@ -4,11 +4,62 @@
   align-items: center;
   gap: 0;
   height: 24px;
-  background: #0d7a5f;
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--chrome-status);
+  color: rgba(255,255,255,0.9);
   font-size: 11px;
   flex-shrink: 0;
   padding: 0 8px;
+  user-select: none;
+}
+
+.status-item {
+  padding: 0 8px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-item.mono {
+  font-family: var(--font-mono);
+}
+
+.status-item.dim {
+  opacity: 0.7;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background: var(--color-success);
+}
+
+.status-separator {
+  flex: 1;
+}
+
+.status-btn {
+  padding: 0 10px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  transition: background 120ms ease;
+  margin-right: 4px;
+}
+
+.status-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.3);
+}
+
+.status-btn:disabled {
+  opacity: 0.6;
 }
 
 .status-item {

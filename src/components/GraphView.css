@@ -11,14 +11,14 @@
   align-items: center;
   gap: 16px;
   padding: 8px 16px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
 }
 
 .graph-stat {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-family: var(--font-mono);
 }
 
@@ -33,7 +33,7 @@
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .legend-dot {
@@ -45,7 +45,7 @@
 .graph-canvas-wrap {
   flex: 1;
   overflow: auto;
-  background: var(--bg-primary);
+  background: var(--bg-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,10 +65,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 .graph-error {
-  color: var(--text-red);
+  color: var(--color-error);
 }

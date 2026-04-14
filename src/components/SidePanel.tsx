@@ -77,7 +77,7 @@ export default function SidePanel() {
       <div
         onMouseDown={onMouseDown}
         style={{ cursor: "col-resize", width: "4px", right: 0 }}
-        className="absolute top-0 bottom-0 hover:bg-[color:var(--accent)] opacity-0 hover:opacity-40 transition-opacity z-10"
+        className="absolute top-0 bottom-0 hover:bg-(--accent) opacity-0 hover:opacity-40 transition-opacity z-10"
       />
     </div>
   );

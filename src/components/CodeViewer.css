@@ -10,9 +10,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  padding: 0 14px;
+  height: 36px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -23,12 +24,12 @@
 .code-file-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-normal);
 }
 
 .code-file-path {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-faint);
   font-family: var(--font-mono);
   margin-left: auto;
   overflow: hidden;
@@ -39,7 +40,8 @@
 
 .code-editor-wrap {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .code-editor-wrap .cm-editor {
@@ -50,4 +52,5 @@
 
 .code-editor-wrap .cm-scroller {
   overflow: auto;
+  height: 100%;
 }

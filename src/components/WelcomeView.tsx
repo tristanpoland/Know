@@ -36,7 +36,7 @@ export default function WelcomeView() {
           >
             <p style={{ color: "var(--text-muted)" }} className="text-xs mb-1">Opened repository</p>
             <p style={{ color: "var(--accent)" }} className="font-mono text-sm font-medium">{repoInfo.name}</p>
-            <p style={{ color: "var(--text-faint)" }} className="text-xs mt-1 font-mono">{repoInfo.root_path}</p>
+            <p style={{ color: "var(--text-faint)" }} className="text-xs mt-1 font-mono">{repoInfo.root}</p>
           </div>
           <p style={{ color: "var(--text-faint)" }} className="text-xs">
             Use the explorer to browse files or search with ⌕

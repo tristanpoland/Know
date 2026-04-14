@@ -37,7 +37,7 @@ export default function ActivityBar() {
               backgroundColor: active ? "var(--bg-selected)" : "transparent",
               borderRadius: "var(--radius-md)",
             }}
-            className="relative flex items-center justify-center w-9 h-9 my-0.5 text-base transition-colors hover:text-[color:var(--text-normal)] hover:bg-[color:var(--bg-hover)]"
+            className="relative flex items-center justify-center w-9 h-9 my-0.5 text-base transition-colors hover:text-(--text-normal) hover:bg-(--bg-hover)"
           >
             {active && (
               <span
