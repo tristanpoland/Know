@@ -84,8 +84,8 @@ export default function SidePanel() {
         {PANEL_TITLES[sidebarView] ?? sidebarView.toUpperCase()}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      {/* Content — key forces remount fade when view changes */}
+      <div key={sidebarView} className="flex-1 overflow-hidden" style={{ animation: "sidepanel-in 160ms ease both" }}>
         {sidebarView === "files"    && <FileExplorer />}
         {sidebarView === "search"   && <SearchView />}
         {sidebarView === "rustdoc"  && <RustdocExplorer />}

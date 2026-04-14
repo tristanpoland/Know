@@ -55,6 +55,20 @@ export default function ActivityBar() {
 
   const win = getCurrentWindow();
 
+  // Index of the currently active sidebar item (-1 when none).
+  // Slot metrics (must match button className):
+  //   aside py-2 = 8px top pad | each button: h-9 (36px) + my-0.5 (2+2px) = 40px/slot
+  //   top-2 offset within button = 8px → indicator h = 36-8-8 = 20px
+  const SLOT_H = 40;
+  const ASIDE_PAD_T = 8;
+  const BTN_MARGIN_T = 2;
+  const INDICATOR_OFFSET = 8;
+  const INDICATOR_H = 20;
+
+  const activeIndex = sidebarOpen
+    ? ITEMS.findIndex((item) => !TAB_ITEMS.has(item.id) && sidebarView === item.id)
+    : -1;
+
   const handleClick = (id: SidebarView) => {
     if (TAB_ITEMS.has(id)) {
       openSpecialTab(id as "rustdoc" | "graph" | "settings");
@@ -77,9 +91,27 @@ export default function ActivityBar() {
         backgroundColor: "var(--chrome-activity)",
         borderRight: "1px solid var(--border-subtle)",
         width: 48,
+        position: "relative",
       }}
       className="flex flex-col items-center shrink-0 py-2 select-none z-10"
     >
+      {/* Single sliding accent bar — moves between active items */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          width: "2px",
+          height: `${INDICATOR_H}px`,
+          backgroundColor: "var(--accent)",
+          borderRadius: "0 2px 2px 0",
+          top: `${ASIDE_PAD_T + BTN_MARGIN_T + activeIndex * SLOT_H + INDICATOR_OFFSET}px`,
+          opacity: activeIndex >= 0 ? 1 : 0,
+          transition: "top 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease",
+          pointerEvents: "none",
+        }}
+      />
+
       {ITEMS.map((item) => {
         const active = !TAB_ITEMS.has(item.id) && sidebarView === item.id && sidebarOpen;
         return (
@@ -92,16 +124,10 @@ export default function ActivityBar() {
               backgroundColor: active ? "var(--bg-selected)" : "transparent",
               borderRadius: "var(--radius-md)",
               boxShadow: active ? "inset 0 0 0 1px var(--border-default)" : "none",
-              transition: "color 120ms ease, background-color 120ms ease",
+              transition: "color 180ms ease, background-color 180ms ease, box-shadow 180ms ease",
             }}
             className="relative flex items-center justify-center w-9 h-9 my-0.5 hover:text-(--text-normal) hover:bg-(--bg-hover)"
           >
-            {active && (
-              <span
-                style={{ backgroundColor: "var(--accent)", borderRadius: "0 2px 2px 0" }}
-                className="absolute left-0 top-2 bottom-2 w-0.5"
-              />
-            )}
             {ICONS[item.id]}
           </button>
         );
