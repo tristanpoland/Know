@@ -38,12 +38,6 @@
     ]
   },
   "plugins": {
-    "fs": {
-      "scope": {
-        "allow": ["$HOME/**", "$DOCUMENT/**", "$DESKTOP/**"],
-        "deny": ["$HOME/.ssh/**"]
-      }
-    },
     "shell": {
       "open": "^https?://"
     }
