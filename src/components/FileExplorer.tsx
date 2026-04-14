@@ -1,5 +1,6 @@
 // components/FileExplorer.tsx — Hierarchical file tree (Agent G)
 import { useState } from "react";
+import { ChevronDown, ChevronRight, Folder, FolderOpen, FileCode2, FileText, Settings2, File } from "lucide-react";
 import { useStore, FileNode } from "../store";
 import "./FileExplorer.css";
 
@@ -59,8 +60,8 @@ function FileTreeNode({
           style={{ paddingLeft: 8 + indent }}
           onClick={() => setExpanded((e) => !e)}
         >
-          <span className="tree-arrow">{expanded ? "▾" : "▸"}</span>
-          <span className="tree-icon">📂</span>
+          <span className="tree-arrow">{expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
+          <span className="tree-icon">{expanded ? <FolderOpen size={14} /> : <Folder size={14} />}</span>
           <span className="tree-name">{node.name}</span>
         </button>
         {expanded && (
@@ -92,12 +93,12 @@ function FileTreeNode({
   );
 }
 
-function fileIcon(kind: string): string {
+function fileIcon(kind: string): JSX.Element {
   switch (kind) {
-    case "rust_source": return "🦀";
-    case "markdown": return "📝";
-    case "toml": return "⚙";
-    default: return "📄";
+    case "rust_source": return <FileCode2 size={14} color="var(--syntax-number)" />;
+    case "markdown":    return <FileText  size={14} color="var(--syntax-type)"   />;
+    case "toml":        return <Settings2 size={14} color="var(--syntax-keyword)" />;
+    default:            return <File      size={14} color="var(--text-faint)"    />;
   }
 }
 

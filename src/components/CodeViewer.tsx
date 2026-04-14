@@ -5,6 +5,7 @@ import { EditorState } from "@codemirror/state";
 import { rust } from "@codemirror/lang-rust";
 import { markdown } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
+import { FileCode2, FileText, Settings2, File } from "lucide-react";
 import { FileContent } from "../store";
 import "./CodeViewer.css";
 
@@ -84,7 +85,7 @@ export default function CodeViewer({ file, isLoading }: Props) {
   return (
     <div className="code-viewer">
       <div className="code-viewer-header">
-        <span className="code-file-icon">{kindIcon(file.kind)}</span>
+        <span className="code-file-icon" style={{ display: "flex", alignItems: "center" }}>{kindIcon(file.kind)}</span>
         <span className="code-file-name">{fileName}</span>
         <span className="code-file-path">{file.path}</span>
       </div>
@@ -93,11 +94,11 @@ export default function CodeViewer({ file, isLoading }: Props) {
   );
 }
 
-function kindIcon(kind: string): string {
+function kindIcon(kind: string): JSX.Element {
   switch (kind) {
-    case "rust": return "🦀";
-    case "markdown": return "📝";
-    case "toml": return "⚙";
-    default: return "📄";
+    case "rust":     return <FileCode2 size={14} color="var(--syntax-number)" />;
+    case "markdown": return <FileText  size={14} color="var(--syntax-type)"   />;
+    case "toml":     return <Settings2 size={14} color="var(--syntax-keyword)" />;
+    default:         return <File      size={14} color="var(--text-faint)"    />;
   }
 }

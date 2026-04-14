@@ -1,5 +1,6 @@
 // components/SearchView.tsx — Unified full-text search interface (Agent E UI)
 import { useState, useCallback } from "react";
+import { Search, Loader2, FileCode2, FileText, Package } from "lucide-react";
 import { useStore, SearchResult } from "../store";
 import "./SearchView.css";
 
@@ -37,7 +38,7 @@ export function SearchView() {
     <div className="search-view">
       <div className="search-header">
         <div className="search-input-wrap">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"><Search size={14} /></span>
           <input
             className="search-input"
             placeholder="Search symbols, docs, and files…"
@@ -45,7 +46,7 @@ export function SearchView() {
             onChange={(e) => handleSearch(e.target.value)}
             autoFocus
           />
-          {isSearching && <span className="search-spinner">⟳</span>}
+          {isSearching && <span className="search-spinner"><Loader2 size={14} className="animate-spin" /></span>}
         </div>
       </div>
 
@@ -57,9 +58,9 @@ export function SearchView() {
           <div className="search-hint">
             <p>Type at least 2 characters to search across:</p>
             <ul>
-              <li>🦀 Rust symbols and their documentation</li>
-              <li>📝 Markdown files</li>
-              <li>📦 Module paths and signatures</li>
+              <li><FileCode2 size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 4, color: "var(--syntax-number)" }} />Rust symbols and their documentation</li>
+              <li><FileText  size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 4, color: "var(--syntax-type)" }}   />Markdown files</li>
+              <li><Package   size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 4, color: "var(--syntax-keyword)" }} />Module paths and signatures</li>
             </ul>
           </div>
         )}

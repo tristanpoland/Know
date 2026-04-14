@@ -1,4 +1,5 @@
 // components/StatusBar.tsx — Bottom status bar with repo info and actions
+import { GitBranch, RefreshCw, Loader2 } from "lucide-react";
 import { useStore } from "../store";
 import "./StatusBar.css";
 
@@ -16,7 +17,7 @@ export function StatusBar() {
         {repoInfo.name}
       </span>
       {repoInfo.branch && (
-        <span className="status-item mono">⎇ {repoInfo.branch}</span>
+        <span className="status-item mono"><GitBranch size={11} style={{ marginRight: 3 }} />{repoInfo.branch}</span>
       )}
       {repoInfo.head_commit && (
         <span className="status-item mono dim">{repoInfo.head_commit}</span>
@@ -35,7 +36,9 @@ export function StatusBar() {
         disabled={isLoading}
         title="Force full re-index"
       >
-        {isLoading ? "⟳ Indexing…" : "↺ Reindex"}
+        {isLoading
+          ? <><Loader2 size={10} className="animate-spin" style={{ marginRight: 3 }} />Indexing…</>
+          : <><RefreshCw size={10} style={{ marginRight: 3 }} />Reindex</>}
       </button>
     </footer>
   );
