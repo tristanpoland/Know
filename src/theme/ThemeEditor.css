@@ -1,0 +1,312 @@
+/* ThemeEditor.css */
+
+.theme-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 16px;
+  background: var(--bg-base);
+  color: var(--text-normal);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+/* ── Section titles ─────────────────────────────────────────────────────── */
+.te-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Theme card list ────────────────────────────────────────────────────── */
+.te-theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.te-theme-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  overflow: hidden;
+  transition: border-color 120ms ease;
+}
+
+.te-theme-card:hover {
+  border-color: var(--border-default);
+}
+
+.te-theme-card--active {
+  border-color: var(--accent);
+  background: var(--bg-selected);
+}
+
+.te-theme-card-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  min-width: 0;
+}
+
+.te-swatches {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.te-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.te-theme-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.te-theme-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.te-theme-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.te-theme-mode {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: capitalize;
+}
+
+.te-active-badge {
+  font-size: 11px;
+  color: var(--accent);
+  margin-left: auto;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+
+.te-card-actions {
+  display: flex;
+  align-items: stretch;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.te-card-btn {
+  width: 32px;
+  height: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-faint);
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: color 100ms ease, background 100ms ease;
+}
+
+.te-card-btn:first-child {
+  border-left: none;
+}
+
+.te-card-btn:hover {
+  color: var(--text-normal);
+  background: var(--bg-hover);
+}
+
+.te-card-btn--danger:hover {
+  color: var(--color-error);
+  background: rgba(244, 112, 103, 0.1);
+}
+
+/* ── Actions row ────────────────────────────────────────────────────────── */
+.te-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.te-action-btn {
+  flex: 1;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  white-space: nowrap;
+}
+
+.te-action-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+/* ── Editor view ────────────────────────────────────────────────────────── */
+.theme-editor-container .theme-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.te-back-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-normal);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.te-back-btn:hover { background: var(--bg-hover); }
+
+.te-name-input {
+  flex: 1;
+  padding: 5px 9px;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-input);
+  color: var(--text-normal);
+  font-family: var(--font-ui);
+  outline: none;
+  min-width: 0;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.te-name-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.te-save-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 120ms ease;
+}
+
+.te-save-btn:hover { opacity: 0.88; }
+
+/* Preview bar */
+.te-preview-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+/* Color groups */
+.te-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.te-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.te-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.te-color-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.te-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.te-color-row:hover {
+  background: var(--bg-hover);
+}
+
+.te-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  flex-shrink: 0;
+}
+
+.te-color-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-normal);
+}
+
+.te-color-value {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  flex-shrink: 0;
+}

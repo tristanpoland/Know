@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useStore } from "../store";
 import { BUILT_IN_THEMES } from "./defaults";
 import type { Theme, ThemeColors } from "./types";
+import "./ThemeEditor.css";
 
 const COLOR_GROUPS: { label: string; keys: (keyof ThemeColors)[] }[] = [
   {
