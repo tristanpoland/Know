@@ -3,57 +3,72 @@
 
 /* ─── Fallback CSS variables (overridden at runtime by applyTheme()) ──────── */
 :root {
-  --bg-base:      #1a1b1e;
-  --bg-surface:   #25262b;
-  --bg-elevated:  #2c2e33;
-  --bg-input:     #1a1b1e;
-  --bg-hover:     #373a40;
-  --bg-selected:  #3d4147;
-  --bg-overlay:   rgba(0,0,0,0.5);
+  --bg-base:      #16171a;
+  --bg-surface:   #1e2025;
+  --bg-elevated:  #252830;
+  --bg-input:     #13141a;
+  --bg-hover:     #2a2d38;
+  --bg-selected:  #303545;
+  --bg-overlay:   rgba(0,0,0,0.55);
 
-  --text-normal:  #c1c2c5;
-  --text-muted:   #909296;
-  --text-faint:   #5c5f66;
+  /* Glassmorphism layers */
+  --glass-subtle:  rgba(255,255,255,0.03);
+  --glass-medium:  rgba(255,255,255,0.06);
+  --glass-strong:  rgba(255,255,255,0.10);
+
+  --text-normal:  #d4d6db;
+  --text-muted:   #7e828c;
+  --text-faint:   #4a4d56;
   --text-on-accent: #ffffff;
-  --text-link:    #4dabf7;
+  --text-link:    #58a6ff;
 
-  --accent:       #4dabf7;
-  --accent-hover: #74c0fc;
-  --accent-muted: rgba(77,171,247,0.15);
+  --accent:       #4f9cf9;
+  --accent-hover: #74b8ff;
+  --accent-muted: rgba(79,156,249,0.18);
+  --accent-glow:  rgba(79,156,249,0.25);
 
-  --border-subtle:  rgba(255,255,255,0.06);
-  --border-default: rgba(255,255,255,0.12);
-  --border-focus:   #4dabf7;
+  --border-subtle:  rgba(255,255,255,0.05);
+  --border-default: rgba(255,255,255,0.09);
+  --border-focus:   #4f9cf9;
 
-  --color-error:   #ff6b6b;
-  --color-warning: #ffa94d;
-  --color-success: #69db7c;
-  --color-info:    #4dabf7;
+  --color-error:   #f47067;
+  --color-warning: #f0a050;
+  --color-success: #57c98a;
+  --color-info:    #4f9cf9;
 
-  --syntax-keyword:  #cc5de8;
-  --syntax-string:   #69db7c;
-  --syntax-comment:  #5c7a5c;
-  --syntax-number:   #ffa94d;
-  --syntax-type:     #74c0fc;
-  --syntax-function: #ffd43b;
-  --syntax-macro:    #ff6b6b;
-  --syntax-lifetime: #ffa94d;
-  --syntax-attribute:#909296;
-  --syntax-operator: #c1c2c5;
+  --syntax-keyword:  #c792ea;
+  --syntax-string:   #c3e88d;
+  --syntax-comment:  #546e6e;
+  --syntax-number:   #f78c6c;
+  --syntax-type:     #82aaff;
+  --syntax-function: #ffcb6b;
+  --syntax-macro:    #f07178;
+  --syntax-lifetime: #f78c6c;
+  --syntax-attribute:#637777;
+  --syntax-operator: #89ddff;
 
-  --chrome-activity: #1a1b1e;
-  --chrome-sidebar:  #25262b;
-  --chrome-tabs:     #1e1f22;
-  --chrome-status:   #007acc;
+  --chrome-activity: #13141a;
+  --chrome-sidebar:  #1a1c22;
+  --chrome-tabs:     #13141a;
+  --chrome-status:   #0969da;
 
-  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-ui:   "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   --font-text: Georgia, "Times New Roman", serif;
 
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
+  --radius-sm:  3px;
+  --radius-md:  6px;
+  --radius-lg:  10px;
+  --radius-xl:  16px;
+  --radius-tab: 8px 8px 0 0;   /* Rounded top corners for tabs */
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg:  0 8px 30px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 0 1px var(--accent-glow), 0 0 16px var(--accent-glow);
+
+  /* Noise texture as a CSS data URI - subtle grain overlay */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 /* ─── Base resets ─────────────────────────────────────────────────────────── */
@@ -72,6 +87,10 @@ body {
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Subtle noise grain over the whole surface */
+  background-image: var(--noise);
+  background-repeat: repeat;
 }
 
 button {
@@ -81,6 +100,7 @@ button {
   color: inherit;
   font: inherit;
   padding: 0;
+  -webkit-font-smoothing: inherit;
 }
 
 a {
@@ -97,23 +117,32 @@ input, textarea {
   color: var(--text-normal);
   font: inherit;
   outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 input:focus, textarea:focus {
   border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 /* ─── Scrollbars ──────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 3px;
+  background: rgba(255,255,255,0.10);
+  border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
 /* ─── Text selection ──────────────────────────────────────────────────────── */
 ::selection {
   background: var(--accent-muted);
   color: var(--text-normal);
+}
+
+/* ─── Glass surface helper ────────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-subtle);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
 }

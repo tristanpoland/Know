@@ -117,7 +117,28 @@ pub fn open_file(request: OpenFileRequest) -> Result<FileContent, String> {
         return Err("Invalid path".to_string());
     }
 
-    let content = std::fs::read_to_string(&canonical).map_err(|e| e.to_string())?;
+    // Refuse files larger than 2 MiB to avoid UI freezes
+    const MAX_BYTES: u64 = 2 * 1024 * 1024;
+    let meta = std::fs::metadata(&canonical).map_err(|e| e.to_string())?;
+    if meta.len() > MAX_BYTES {
+        return Err(format!(
+            "File is too large to display ({} KiB). Only files under 2 MiB are supported.",
+            meta.len() / 1024
+        ));
+    }
+
+    // Read raw bytes first so we can detect binary content
+    let bytes = std::fs::read(&canonical).map_err(|e| e.to_string())?;
+
+    // Heuristic: if more than 0.3 % of the first 8 KiB are null bytes, treat as binary
+    let probe = &bytes[..bytes.len().min(8192)];
+    let null_count = probe.iter().filter(|&&b| b == 0).count();
+    if null_count > probe.len() / 333 {
+        return Err("Binary file — cannot display in editor.".to_string());
+    }
+
+    let content = String::from_utf8(bytes)
+        .map_err(|_| "File is not valid UTF-8 (binary or non-UTF-8 encoded).".to_string())?;
 
     let kind = match canonical.extension().and_then(|e| e.to_str()) {
         Some("rs") => "rust",
