@@ -1,21 +1,19 @@
 // components/FileExplorer.tsx — Hierarchical file tree (Agent G)
-import React, { useState } from "react";
+import { useState } from "react";
 import { useStore, FileNode } from "../store";
 import "./FileExplorer.css";
 
 export function FileExplorer() {
   const fileTree = useStore((s) => s.fileTree);
-  const openFilePath = useStore((s) => s.openFilePath);
   const loadSymbols = useStore((s) => s.loadSymbols);
-  const setActiveView = useStore((s) => s.setActiveView);
+  const openFileTab = useStore((s) => s.openFileTab);
 
   const handleFileClick = async (node: FileNode) => {
     if (node.is_dir) return;
-    await openFilePath(node.path);
+    openFileTab(node.path, node.name, node.kind);
     if (node.kind === "rust_source") {
       await loadSymbols(node.path);
     }
-    setActiveView("explorer");
   };
 
   if (fileTree.length === 0) {
@@ -46,8 +44,10 @@ function FileTreeNode({
   onFileClick: (n: FileNode) => void;
 }) {
   const [expanded, setExpanded] = useState(depth === 0);
-  const openFile = useStore((s) => s.openFile);
-  const isActive = openFile?.path === node.path;
+  const tabs = useStore((s) => s.tabs);
+  const activeTabId = useStore((s) => s.activeTabId);
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  const isActive = activeTab?.type === "file" && activeTab?.path === node.path;
 
   const indent = depth * 12;
 
@@ -100,3 +100,5 @@ function fileIcon(kind: string): string {
     default: return "📄";
   }
 }
+
+export default FileExplorer;

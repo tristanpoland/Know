@@ -3,6 +3,31 @@
 
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+import type { Theme } from "./theme/types";
+import {
+  BUILT_IN_THEMES,
+  OBSIDIAN_DARK,
+  applyTheme,
+  loadStoredThemeId,
+  saveThemeId,
+  loadCustomThemes,
+  saveCustomThemes,
+} from "./theme/defaults";
+
+// ─── Tab types ───────────────────────────────────────────────────────────────
+
+export type TabType = "welcome" | "file" | "rustdoc" | "search" | "graph" | "settings";
+
+export interface Tab {
+  id: string;
+  type: TabType;
+  title: string;
+  /** File path for file tabs */
+  path?: string;
+  /** File kind for file tabs: 'rust' | 'markdown' | 'toml' | 'text' */
+  fileKind?: string;
+  isPinned: boolean;
+}
 
 // ─── Types (mirroring Rust backend models) ──────────────────────────────────
 
@@ -100,29 +125,70 @@ export interface RepoInfo {
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
-export type ActiveView = "explorer" | "rustdoc" | "search" | "graph";
+export type SidebarView = "files" | "search" | "rustdoc" | "graph" | "settings";
+
+// Initialise theme from localStorage
+const _customThemes = loadCustomThemes();
+const _allThemes = [...BUILT_IN_THEMES, ..._customThemes];
+const _storedId = loadStoredThemeId();
+const _initialTheme = _allThemes.find((t) => t.id === _storedId) ?? OBSIDIAN_DARK;
+
+const SPECIAL_TAB_IDS: Record<string, string> = {
+  welcome: "tab-welcome",
+  rustdoc: "tab-rustdoc",
+  search:  "tab-search",
+  graph:   "tab-graph",
+  settings:"tab-settings",
+};
+
+function makeTab(partial: Omit<Tab, "id">): Tab {
+  return { ...partial, id: `tab-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` };
+}
 
 interface KnowStore {
-  // Repo state
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  theme: Theme;
+  allThemes: Theme[];
+  setTheme: (id: string) => void;
+  addCustomTheme: (t: Theme) => void;
+  removeCustomTheme: (id: string) => void;
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  tabs: Tab[];
+  activeTabId: string | null;
+  openTab: (tab: Omit<Tab, "id">) => string;
+  closeTab: (id: string) => void;
+  setActiveTab: (id: string) => void;
+  openFileTab: (path: string, title: string, fileKind?: string) => void;
+  openSpecialTab: (type: Exclude<TabType, "file">) => void;
+
+  // ── Sidebar ───────────────────────────────────────────────────────────────
+  sidebarOpen: boolean;
+  sidebarView: SidebarView;
+  sidebarWidth: number;
+  setSidebarView: (v: SidebarView) => void;
+  toggleSidebar: () => void;
+  setSidebarWidth: (w: number) => void;
+
+  // ── Repo ──────────────────────────────────────────────────────────────────
   repoInfo: RepoInfo | null;
   fileTree: FileNode[];
   isLoading: boolean;
   error: string | null;
 
-  // Editor state
-  openFile: FileContent | null;
-  activeView: ActiveView;
+  // ── File content cache ────────────────────────────────────────────────────
+  openFileContents: Record<string, FileContent>;
 
-  // Rustdoc explorer
+  // ── Rustdoc ───────────────────────────────────────────────────────────────
   rustSymbols: RustItem[];
   selectedSymbol: SymbolDoc | null;
   crateDoc: CrateDoc | null;
 
-  // Search
+  // ── Search ────────────────────────────────────────────────────────────────
   searchQuery: string;
   searchResults: SearchResult[];
 
-  // Actions
+  // ── Actions ───────────────────────────────────────────────────────────────
   openRepo: (path: string) => Promise<void>;
   loadFileTree: () => Promise<void>;
   openFilePath: (path: string) => Promise<void>;
@@ -130,110 +196,219 @@ interface KnowStore {
   selectSymbol: (qualifiedPath: string) => Promise<void>;
   setSearchQuery: (q: string) => void;
   runSearch: (q: string) => Promise<void>;
-  setActiveView: (view: ActiveView) => void;
   reindex: () => Promise<void>;
   clearError: () => void;
 }
 
-export const useStore = create<KnowStore>((set, get) => ({
-  repoInfo: null,
-  fileTree: [],
-  isLoading: false,
-  error: null,
-  openFile: null,
-  activeView: "explorer",
-  rustSymbols: [],
-  selectedSymbol: null,
-  crateDoc: null,
-  searchQuery: "",
-  searchResults: [],
+export const useStore = create<KnowStore>((set, get) => {
+  // Apply initial theme immediately
+  applyTheme(_initialTheme);
 
-  openRepo: async (path: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const info = await invoke<RepoInfo>("open_repo", { request: { path } });
-      set({ repoInfo: info });
-      await get().loadFileTree();
-      await get().loadSymbols();
-    } catch (e) {
-      set({ error: String(e) });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+  return {
+    // ── Theme ───────────────────────────────────────────────────────────────
+    theme: _initialTheme,
+    allThemes: _allThemes,
 
-  loadFileTree: async () => {
-    try {
-      const tree = await invoke<FileNode[]>("get_repo_tree");
-      set({ fileTree: tree });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
+    setTheme: (id: string) => {
+      const t = get().allThemes.find((x) => x.id === id);
+      if (!t) return;
+      applyTheme(t);
+      saveThemeId(id);
+      set({ theme: t });
+    },
 
-  openFilePath: async (path: string) => {
-    try {
-      const file = await invoke<FileContent>("open_file", { request: { path } });
-      set({ openFile: file });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
+    addCustomTheme: (t: Theme) => {
+      const existing = get().allThemes.filter((x) => x.id !== t.id);
+      const next = [...existing, t];
+      const customs = next.filter((x) => !BUILT_IN_THEMES.some((b) => b.id === x.id));
+      saveCustomThemes(customs);
+      set({ allThemes: next });
+    },
 
-  loadSymbols: async (filePath?: string) => {
-    try {
-      const symbols = await invoke<RustItem[]>("get_rust_symbols", {
-        request: { file_path: filePath ?? null, kind_filter: null },
-      });
-      set({ rustSymbols: symbols });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
+    removeCustomTheme: (id: string) => {
+      const next = get().allThemes.filter((x) => x.id !== id);
+      const customs = next.filter((x) => !BUILT_IN_THEMES.some((b) => b.id === x.id));
+      saveCustomThemes(customs);
+      set({ allThemes: next });
+      if (get().theme.id === id) {
+        get().setTheme(OBSIDIAN_DARK.id);
+      }
+    },
 
-  selectSymbol: async (qualifiedPath: string) => {
-    try {
-      const doc = await invoke<SymbolDoc | null>("get_docs_for_symbol", {
-        request: { qualified_path: qualifiedPath },
-      });
-      set({ selectedSymbol: doc });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
+    // ── Tabs ────────────────────────────────────────────────────────────────
+    tabs: [{ id: "tab-welcome", type: "welcome", title: "Welcome", isPinned: false }],
+    activeTabId: "tab-welcome",
 
-  setSearchQuery: (q: string) => {
-    set({ searchQuery: q });
-  },
+    openTab: (partial) => {
+      const tab = makeTab(partial);
+      set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }));
+      return tab.id;
+    },
 
-  runSearch: async (q: string) => {
-    if (!q.trim()) {
-      set({ searchResults: [] });
-      return;
-    }
-    try {
-      const results = await invoke<SearchResult[]>("search", {
-        query: { query: q, limit: 30, kinds: null },
-      });
-      set({ searchResults: results });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
+    closeTab: (id: string) => {
+      const { tabs, activeTabId } = get();
+      const idx = tabs.findIndex((t) => t.id === id);
+      if (idx === -1) return;
+      const pinned = tabs[idx].isPinned;
+      if (pinned) return; // can't close pinned tabs
 
-  setActiveView: (view: ActiveView) => set({ activeView: view }),
+      const next = tabs.filter((t) => t.id !== id);
+      let nextActive = activeTabId;
+      if (activeTabId === id) {
+        nextActive = next[Math.min(idx, next.length - 1)]?.id ?? null;
+      }
+      // Open welcome if no tabs remain
+      if (next.length === 0) {
+        const welcome: Tab = { id: "tab-welcome", type: "welcome", title: "Welcome", isPinned: false };
+        set({ tabs: [welcome], activeTabId: "tab-welcome" });
+      } else {
+        set({ tabs: next, activeTabId: nextActive });
+      }
+    },
 
-  reindex: async () => {
-    set({ isLoading: true });
-    try {
-      await invoke("reindex");
-      await get().loadSymbols();
-    } catch (e) {
-      set({ error: String(e) });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+    setActiveTab: (id: string) => set({ activeTabId: id }),
 
-  clearError: () => set({ error: null }),
-}));
+    openFileTab: (path: string, title: string, fileKind?: string) => {
+      const { tabs } = get();
+      // Reuse existing tab for same path
+      const existing = tabs.find((t) => t.type === "file" && t.path === path);
+      if (existing) {
+        set({ activeTabId: existing.id });
+        return;
+      }
+      const tab = makeTab({ type: "file", title, path, fileKind, isPinned: false });
+      set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }));
+      get().openFilePath(path);
+    },
+
+    openSpecialTab: (type) => {
+      const id = SPECIAL_TAB_IDS[type];
+      const { tabs } = get();
+      if (tabs.find((t) => t.id === id)) {
+        set({ activeTabId: id });
+        return;
+      }
+      const LABELS: Record<string, string> = {
+        welcome: "Welcome", rustdoc: "Rustdoc", search: "Search",
+        graph: "Graph", settings: "Settings",
+      };
+      const tab: Tab = { id, type, title: LABELS[type] ?? type, isPinned: false };
+      set((s) => ({ tabs: [...s.tabs, tab], activeTabId: id }));
+    },
+
+    // ── Sidebar ─────────────────────────────────────────────────────────────
+    sidebarOpen: true,
+    sidebarView: "files",
+    sidebarWidth: 260,
+
+    setSidebarView: (v: SidebarView) => {
+      const { sidebarView, sidebarOpen } = get();
+      if (sidebarView === v) {
+        set({ sidebarOpen: !sidebarOpen });
+      } else {
+        set({ sidebarView: v, sidebarOpen: true });
+      }
+    },
+
+    toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+    setSidebarWidth: (w: number) => set({ sidebarWidth: Math.max(180, Math.min(600, w)) }),
+
+    // ── Repo ────────────────────────────────────────────────────────────────
+    repoInfo: null,
+    fileTree: [],
+    isLoading: false,
+    error: null,
+    openFileContents: {},
+
+    openRepo: async (path: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        const info = await invoke<RepoInfo>("open_repo", { request: { path } });
+        set({ repoInfo: info });
+        await get().loadFileTree();
+        await get().loadSymbols();
+      } catch (e) {
+        set({ error: String(e) });
+      } finally {
+        set({ isLoading: false });
+      }
+    },
+
+    loadFileTree: async () => {
+      try {
+        const tree = await invoke<FileNode[]>("get_repo_tree");
+        set({ fileTree: tree });
+      } catch (e) {
+        set({ error: String(e) });
+      }
+    },
+
+    openFilePath: async (path: string) => {
+      try {
+        const file = await invoke<FileContent>("open_file", { request: { path } });
+        set((s) => ({ openFileContents: { ...s.openFileContents, [path]: file } }));
+      } catch (e) {
+        set({ error: String(e) });
+      }
+    },
+
+    // ── Rustdoc ─────────────────────────────────────────────────────────────
+    rustSymbols: [],
+    selectedSymbol: null,
+    crateDoc: null,
+
+    loadSymbols: async (filePath?: string) => {
+      try {
+        const symbols = await invoke<RustItem[]>("get_rust_symbols", {
+          request: { file_path: filePath ?? null, kind_filter: null },
+        });
+        set({ rustSymbols: symbols });
+      } catch (e) {
+        set({ error: String(e) });
+      }
+    },
+
+    selectSymbol: async (qualifiedPath: string) => {
+      try {
+        const doc = await invoke<SymbolDoc | null>("get_docs_for_symbol", {
+          request: { qualified_path: qualifiedPath },
+        });
+        set({ selectedSymbol: doc });
+      } catch (e) {
+        set({ error: String(e) });
+      }
+    },
+
+    // ── Search ──────────────────────────────────────────────────────────────
+    searchQuery: "",
+    searchResults: [],
+
+    setSearchQuery: (q: string) => set({ searchQuery: q }),
+
+    runSearch: async (q: string) => {
+      if (!q.trim()) { set({ searchResults: [] }); return; }
+      try {
+        const results = await invoke<SearchResult[]>("search", {
+          query: { query: q, limit: 30, kinds: null },
+        });
+        set({ searchResults: results });
+      } catch (e) {
+        set({ error: String(e) });
+      }
+    },
+
+    reindex: async () => {
+      set({ isLoading: true });
+      try {
+        await invoke("reindex");
+        await get().loadSymbols();
+      } catch (e) {
+        set({ error: String(e) });
+      } finally {
+        set({ isLoading: false });
+      }
+    },
+
+    clearError: () => set({ error: null }),
+  };
+});

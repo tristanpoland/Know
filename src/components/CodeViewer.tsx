@@ -1,5 +1,5 @@
 // components/CodeViewer.tsx — Syntax-highlighted code/markdown viewer using CodeMirror
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { rust } from "@codemirror/lang-rust";
@@ -9,15 +9,16 @@ import { FileContent } from "../store";
 import "./CodeViewer.css";
 
 interface Props {
-  file: FileContent;
+  file: FileContent | null;
+  isLoading?: boolean;
 }
 
-export function CodeViewer({ file }: Props) {
+export default function CodeViewer({ file, isLoading }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorRef.current || !file) return;
 
     const extensions = [
       basicSetup,
@@ -48,19 +49,35 @@ export function CodeViewer({ file }: Props) {
       view.destroy();
       viewRef.current = null;
     };
-  }, [file.path, file.content, file.kind]);
+  }, [file?.path, file?.content, file?.kind]);
 
   // Update content when file changes without recreating the editor
   useEffect(() => {
     const view = viewRef.current;
-    if (!view) return;
+    if (!view || !file) return;
     const current = view.state.doc.toString();
     if (current !== file.content) {
       view.dispatch({
         changes: { from: 0, to: current.length, insert: file.content },
       });
     }
-  }, [file.content]);
+  }, [file?.content]);
+
+  if (isLoading) {
+    return (
+      <div style={{ color: "var(--text-faint)" }} className="flex items-center justify-center h-full text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!file) {
+    return (
+      <div style={{ color: "var(--text-faint)" }} className="flex items-center justify-center h-full text-sm">
+        No file selected
+      </div>
+    );
+  }
 
   const fileName = file.path.split(/[/\\]/).pop() ?? file.path;
 

@@ -1,14 +1,14 @@
 // components/SearchView.tsx — Unified full-text search interface (Agent E UI)
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useStore, SearchResult } from "../store";
 import "./SearchView.css";
 
 export function SearchView() {
   const runSearch = useStore((s) => s.runSearch);
   const searchResults = useStore((s) => s.searchResults);
-  const openFilePath = useStore((s) => s.openFilePath);
+  const openFileTab = useStore((s) => s.openFileTab);
   const selectSymbol = useStore((s) => s.selectSymbol);
-  const setActiveView = useStore((s) => s.setActiveView);
+  const openSpecialTab = useStore((s) => s.openSpecialTab);
 
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -27,10 +27,9 @@ export function SearchView() {
   const handleResultClick = async (result: SearchResult) => {
     if (result.kind === "rust_symbol" || result.kind === "doc_comment") {
       await selectSymbol(result.path);
-      setActiveView("rustdoc");
+      openSpecialTab("rustdoc");
     } else {
-      await openFilePath(result.path);
-      setActiveView("explorer");
+      openFileTab(result.path, result.title);
     }
   };
 
@@ -123,3 +122,5 @@ function SearchResultRow({
     </button>
   );
 }
+
+export default SearchView;

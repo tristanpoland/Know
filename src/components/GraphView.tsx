@@ -1,6 +1,6 @@
 // components/GraphView.tsx — Knowledge graph visualization
 // Simple node-link diagram showing the relationship structure.
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./GraphView.css";
 
@@ -214,3 +214,5 @@ function computeLayout(
 
   return map;
 }
+
+export default GraphView;

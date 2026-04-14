@@ -1,5 +1,4 @@
 // components/StatusBar.tsx — Bottom status bar with repo info and actions
-import React from "react";
 import { useStore } from "../store";
 import "./StatusBar.css";
 

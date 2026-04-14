@@ -1,6 +1,6 @@
 // components/RustdocExplorer.tsx — Rustdoc-style symbol browser (Core MVP Feature)
 // Three-pane layout: module tree | symbol list | symbol detail
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useStore, RustItem, RustItemKind, SymbolDoc } from "../store";
 import "./RustdocExplorer.css";
 
@@ -30,8 +30,7 @@ export function RustdocExplorer() {
   const rustSymbols = useStore((s) => s.rustSymbols);
   const selectedSymbol = useStore((s) => s.selectedSymbol);
   const selectSymbol = useStore((s) => s.selectSymbol);
-  const openFilePath = useStore((s) => s.openFilePath);
-  const setActiveView = useStore((s) => s.setActiveView);
+  const openFileTab = useStore((s) => s.openFileTab);
   const repoInfo = useStore((s) => s.repoInfo);
 
   const [moduleFilter, setModuleFilter] = useState<string>("all");
@@ -87,10 +86,10 @@ export function RustdocExplorer() {
     return items;
   }, [rustSymbols, kindFilter, moduleFilter, nameFilter]);
 
-  const handleJumpToSource = async () => {
+  const handleJumpToSource = () => {
     if (!selectedSymbol) return;
-    await openFilePath(selectedSymbol.file_path);
-    setActiveView("explorer");
+    const name = selectedSymbol.file_path.split(/[/\\]/).pop() ?? selectedSymbol.file_path;
+    openFileTab(selectedSymbol.file_path, name, "rust_source");
   };
 
   return (
@@ -279,3 +278,5 @@ function kindAbbrev(kind: RustItemKind): string {
   };
   return map[kind] ?? kind.slice(0, 3);
 }
+
+export default RustdocExplorer;

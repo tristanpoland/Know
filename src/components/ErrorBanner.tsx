@@ -1,5 +1,4 @@
 // components/ErrorBanner.tsx — Dismissable error notification banner
-import React from "react";
 import { useStore } from "../store";
 import "./ErrorBanner.css";
 

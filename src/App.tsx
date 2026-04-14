@@ -1,67 +1,80 @@
-// App.tsx — Root layout component
-import React from "react";
-import { Sidebar } from "./components/Sidebar";
-import { MainPanel } from "./components/MainPanel";
-import { StatusBar } from "./components/StatusBar";
-import { ErrorBanner } from "./components/ErrorBanner";
+// App.tsx — Root layout: Obsidian-style activity bar + sidebar + tabs
 import { useStore } from "./store";
-import "./styles/App.css";
+import { ErrorBanner } from "./components/ErrorBanner";
+import ActivityBar from "./components/ActivityBar";
+import SidePanel from "./components/SidePanel";
+import TabBar from "./components/TabBar";
+import WelcomeView from "./components/WelcomeView";
+import CodeViewer from "./components/CodeViewer";
+import RustdocExplorer from "./components/RustdocExplorer";
+import SearchView from "./components/SearchView";
+import GraphView from "./components/GraphView";
+import { ThemeEditor } from "./theme/ThemeEditor";
+import { StatusBar } from "./components/StatusBar";
+
+function TabContent() {
+  const tabs        = useStore((s) => s.tabs);
+  const activeTabId = useStore((s) => s.activeTabId);
+  const openFileContents = useStore((s) => s.openFileContents);
+  const activeTab   = tabs.find((t) => t.id === activeTabId);
+
+  if (!activeTab) {
+    return <WelcomeView />;
+  }
+
+  switch (activeTab.type) {
+    case "welcome":
+      return <WelcomeView />;
+    case "file": {
+      const file = activeTab.path ? openFileContents[activeTab.path] : undefined;
+      return (
+        <CodeViewer
+          file={file ?? null}
+          isLoading={!file && !!activeTab.path}
+        />
+      );
+    }
+    case "rustdoc":
+      return <RustdocExplorer />;
+    case "search":
+      return <SearchView />;
+    case "graph":
+      return <GraphView />;
+    case "settings":
+      return <ThemeEditor />;
+    default:
+      return <WelcomeView />;
+  }
+}
 
 export default function App() {
-  const repoInfo = useStore((s) => s.repoInfo);
-
   return (
-    <div className="app-root">
+    <div
+      style={{ backgroundColor: "var(--bg-base)", color: "var(--text-normal)" }}
+      className="flex flex-col h-full overflow-hidden"
+    >
       <ErrorBanner />
-      {!repoInfo ? (
-        <WelcomeScreen />
-      ) : (
-        <>
-          <div className="app-body">
-            <Sidebar />
-            <MainPanel />
+
+      {/* Content row */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Activity bar */}
+        <ActivityBar />
+
+        {/* Side panel */}
+        <SidePanel />
+
+        {/* Main editor area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <TabBar />
+          <div className="flex-1 overflow-hidden">
+            <TabContent />
           </div>
-          <StatusBar />
-        </>
-      )}
-    </div>
-  );
-}
-
-function WelcomeScreen() {
-  const openRepo = useStore((s) => s.openRepo);
-  const isLoading = useStore((s) => s.isLoading);
-
-  const handleOpen = async () => {
-    const { open } = await import("@tauri-apps/plugin-dialog");
-    const selected = await open({ directory: true, multiple: false, title: "Open Repository" });
-    if (selected && typeof selected === "string") {
-      await openRepo(selected);
-    }
-  };
-
-  return (
-    <div className="welcome">
-      <div className="welcome-inner">
-        <div className="welcome-logo">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-            <rect width="56" height="56" rx="12" fill="#4dabf7" fillOpacity="0.12" />
-            <text x="28" y="38" textAnchor="middle" fontSize="28" fill="#4dabf7" fontWeight="700">K</text>
-          </svg>
         </div>
-        <h1 className="welcome-title">Know</h1>
-        <p className="welcome-subtitle">
-          Local-first Git-native documentation &amp; code intelligence for Rust
-        </p>
-        <button
-          className="welcome-btn"
-          onClick={handleOpen}
-          disabled={isLoading}
-        >
-          {isLoading ? "Opening…" : "Open Repository"}
-        </button>
-        <p className="welcome-hint">Select a directory containing a Git repository</p>
       </div>
+
+      {/* Status bar */}
+      <StatusBar />
     </div>
   );
 }
+

@@ -1,41 +1,63 @@
-/* global.css — Design tokens and base styles for Know */
+/* global.css — Tailwind base + CSS design tokens for Know */
+@import "tailwindcss";
 
+/* ─── Fallback CSS variables (overridden at runtime by applyTheme()) ──────── */
 :root {
-  --bg-primary: #1a1b1e;
-  --bg-secondary: #25262b;
-  --bg-tertiary: #2c2e33;
-  --bg-hover: #373a40;
-  --bg-active: #3d4147;
+  --bg-base:      #1a1b1e;
+  --bg-surface:   #25262b;
+  --bg-elevated:  #2c2e33;
+  --bg-input:     #1a1b1e;
+  --bg-hover:     #373a40;
+  --bg-selected:  #3d4147;
+  --bg-overlay:   rgba(0,0,0,0.5);
 
-  --text-primary: #c1c2c5;
-  --text-secondary: #909296;
-  --text-accent: #4dabf7;
-  --text-green: #69db7c;
-  --text-orange: #ffa94d;
-  --text-purple: #cc5de8;
-  --text-red: #ff6b6b;
-  --text-yellow: #ffd43b;
+  --text-normal:  #c1c2c5;
+  --text-muted:   #909296;
+  --text-faint:   #5c5f66;
+  --text-on-accent: #ffffff;
+  --text-link:    #4dabf7;
 
-  --border: #373a40;
-  --border-focus: #4dabf7;
+  --accent:       #4dabf7;
+  --accent-hover: #74c0fc;
+  --accent-muted: rgba(77,171,247,0.15);
 
-  --sidebar-width: 260px;
-  --panel-width: 320px;
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.12);
+  --border-focus:   #4dabf7;
 
+  --color-error:   #ff6b6b;
+  --color-warning: #ffa94d;
+  --color-success: #69db7c;
+  --color-info:    #4dabf7;
+
+  --syntax-keyword:  #cc5de8;
+  --syntax-string:   #69db7c;
+  --syntax-comment:  #5c7a5c;
+  --syntax-number:   #ffa94d;
+  --syntax-type:     #74c0fc;
+  --syntax-function: #ffd43b;
+  --syntax-macro:    #ff6b6b;
+  --syntax-lifetime: #ffa94d;
+  --syntax-attribute:#909296;
+  --syntax-operator: #c1c2c5;
+
+  --chrome-activity: #1a1b1e;
+  --chrome-sidebar:  #25262b;
+  --chrome-tabs:     #1e1f22;
+  --chrome-status:   #007acc;
+
+  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-text: Georgia, "Times New Roman", serif;
 
-  --radius: 4px;
-  --radius-lg: 8px;
-
-  --transition: 120ms ease;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ─── Base resets ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
   height: 100%;
@@ -43,9 +65,10 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-normal);
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -57,61 +80,40 @@ button {
   cursor: pointer;
   color: inherit;
   font: inherit;
+  padding: 0;
 }
 
 a {
-  color: var(--text-accent);
+  color: var(--text-link);
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
-}
+a:hover { text-decoration: underline; }
 
 input, textarea {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-normal);
   font: inherit;
   outline: none;
-  transition: border-color var(--transition);
 }
 
 input:focus, textarea:focus {
   border-color: var(--border-focus);
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ─── Scrollbars ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-default);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--bg-hover);
-}
+::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
 
-/* Utility classes */
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* ─── Text selection ──────────────────────────────────────────────────────── */
+::selection {
+  background: var(--accent-muted);
+  color: var(--text-normal);
 }
-
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.flex-1 { flex: 1; }
-.overflow-auto { overflow: auto; }
-.overflow-hidden { overflow: hidden; }
-.h-full { height: 100%; }
-.w-full { width: 100%; }
