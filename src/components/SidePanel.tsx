@@ -55,11 +55,16 @@ export default function SidePanel() {
       <div
         style={{
           color: "var(--text-faint)",
-          fontSize: "11px",
-          letterSpacing: "0.08em",
+          fontSize: "10px",
+          letterSpacing: "0.10em",
           borderBottom: "1px solid var(--border-subtle)",
+          backgroundColor: "var(--glass-subtle)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          padding: "8px 12px 7px",
+          fontWeight: 600,
         }}
-        className="px-3 py-2 font-semibold select-none shrink-0"
+        className="select-none shrink-0 uppercase"
       >
         {PANEL_TITLES[sidebarView] ?? sidebarView.toUpperCase()}
       </div>
